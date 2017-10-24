@@ -144,8 +144,8 @@ namespace fontstash {
             nfonts = 0;
 
             // Create texture for the cache.
-            itw = 1.0f/params->width;
-            ith = 1.0f/params->height;
+            itw_ = 1.0f/params->width;
+            ith_ = 1.0f/params->height;
             texData = (unsigned char*)std::calloc(params->width * params->height, sizeof(unsigned char));
             if (texData == nullptr)
             {
