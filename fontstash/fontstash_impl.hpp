@@ -140,8 +140,7 @@ namespace fontstash {
             atlas.reset(new FONSatlas(params->width, params->height, FONS_INIT_ATLAS_NODES));
 
             // Allocate space for fonts.
-            cfonts = FONS_INIT_FONTS;
-            nfonts = 0;
+            fonts.resize(FONS_INIT_FONTS);
 
             // Create texture for the cache.
             itw_ = 1.0f/params->width;
@@ -166,9 +165,9 @@ namespace fontstash {
 
         ~FONScontext()
         {
-            for (int i = 0; i < nfonts; ++i)
+            for (const auto &font : fonts)
             {
-                freeFont(fonts[i]);
+                freeFont(font);
             }
 
             if (texData)
@@ -235,8 +234,6 @@ namespace fontstash {
     	unsigned char* texData;
     	int            dirtyRect[4];
         std::vector<font_ptr> fonts;
-    	int             cfonts;
-    	int             nfonts;
         std::unique_ptr<FONSatlas> atlas;
     	float           verts[FONS_VERTEX_COUNT*2];
     	float           tcoords[FONS_VERTEX_COUNT*2];
@@ -286,8 +283,7 @@ namespace fontstash {
             font->nglyphs = 0;
 
             fonts.emplace_back(font);
-            nfonts++;
-            return nfonts-1;
+            return fonts.size() - 1;
         }
 
         void vertex(float x, float y, float s, float t, unsigned int c)
@@ -530,7 +526,7 @@ namespace fontstash {
     	if (!font->font.loadFont(this, data, dataSize))
         {
             freeFont(font);
-            nfonts--;
+            fonts.pop_back();
             return INVALID;
         }
     	// Store normalized line height. The real line height is got
@@ -546,12 +542,11 @@ namespace fontstash {
 
     int FONScontext::getFontByName(const char* name)
     {
-    	int i;
-    	for (i = 0; i < nfonts; i++)
+    	for(size_t index = 0; index < fonts.size(); ++index)
         {
-    		if (strcmp(fonts[i]->name, name) == 0)
+    		if (strcmp(fonts[index]->name, name) == 0)
             {
-    			return i;
+    			return index;
             }
     	}
     	return INVALID;
@@ -792,7 +787,7 @@ namespace fontstash {
     	FONSfont* font;
     	float width;
 
-    	if (state->font < 0 || state->font >= nfonts) return x;
+    	if (state->font < 0 || state->font >= fonts.size() - 1) return x;
     	font = fonts[state->font];
     	if (font->data == nullptr) return x;
 
@@ -847,7 +842,7 @@ namespace fontstash {
 
     	memset(iter, 0, sizeof(*iter));
 
-    	if (state->font < 0 || state->font >= nfonts)
+    	if (state->font < 0 || state->font >= fonts.size() - 1)
         {
             return 0;
         }
@@ -983,7 +978,7 @@ namespace fontstash {
     	FONSfont* font;
     	float startx, advance;
 
-    	if (state->font < 0 || state->font >= nfonts) return 0;
+    	if (state->font < 0 || state->font >= fonts.size() - 1) return 0;
     	font = fonts[state->font];
     	if (font->data == nullptr) return 0;
 
@@ -1056,7 +1051,7 @@ namespace fontstash {
     	FONSstate* state = getState();
     	short isize;
 
-    	if (state->font < 0 || state->font >= nfonts)
+    	if (state->font < 0 || state->font >= fonts.size() - 1)
         {
             return;
         }
@@ -1087,7 +1082,7 @@ namespace fontstash {
     	FONSstate* state = getState();
     	short isize;
 
-    	if (state->font < 0 || state->font >= nfonts) return;
+    	if (state->font < 0 || state->font >= fonts.size() - 1) return;
     	font = fonts[state->font];
     	isize = (short)(state->size*10.0f);
     	if (font->data == nullptr) return;
@@ -1128,22 +1123,6 @@ namespace fontstash {
     		return 1;
     	}
     	return 0;
-    }
-
-    static void fonsDeleteInternal(FONScontext* stash)
-    {
-    	if (stash == nullptr) return;
-
-        stash->params->renderDelete();
-
-    	for (int i = 0; i < stash->nfonts; ++i)
-        {
-    		stash->freeFont(stash->fonts[i]);
-        }
-
-    	if (stash->texData) free(stash->texData);
-    	if (stash->scratch) free(stash->scratch);
-    	free(stash);
     }
 
     inline void FONScontext::fonsSetErrorCallback(void (*callback)(void* uptr, int error, int val), void* uptr)
@@ -1242,11 +1221,13 @@ namespace fontstash {
     	dirtyRect[3] = 0;
 
     	// Reset cached glyphs
-    	for (i = 0; i < nfonts; i++) {
-    		FONSfont* font = fonts[i];
+    	for(const auto &font : fonts)
+        {
     		font->nglyphs = 0;
     		for (j = 0; j < FONS_HASH_LUT_SIZE; j++)
-    			font->lut[j] = -1;
+    	   	{
+                font->lut[j] = -1;
+            }
     	}
 
     	params->width = width;
