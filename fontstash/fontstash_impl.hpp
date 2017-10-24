@@ -36,6 +36,15 @@ namespace fontstash {
     	unsigned int color;
     	float blur;
     	float spacing;
+        void clear()
+        {
+            size = 12.0f;
+            color = 0xffffffff;
+            font = FONSstate::npos;
+            blur = 0;
+            spacing = 0;
+            align = FONS_ALIGN_LEFT | FONS_ALIGN_BASELINE;
+        }
     };
 
 
@@ -353,13 +362,7 @@ namespace fontstash {
 
     void FONScontext::clearState()
     {
-    	FONSstate* state = getState();
-    	state->size = 12.0f;
-    	state->color = 0xffffffff;
-    	state->font = FONSstate::npos;
-    	state->blur = 0;
-    	state->spacing = 0;
-    	state->align = FONS_ALIGN_LEFT | FONS_ALIGN_BASELINE;
+        getState()->clear();
     }
 
     static FILE* fons__fopen(const char* filename, const char* mode)
