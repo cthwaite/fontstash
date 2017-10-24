@@ -94,12 +94,12 @@ namespace fontstash {
 
         ~FONScontext()
         {
-            if (texData)
+            if(texData)
             {
                 free(texData);
             }
 
-            if (scratch)
+            if(scratch)
             {
                 free(scratch);
             }
@@ -153,8 +153,8 @@ namespace fontstash {
         void drawDebug(float x, float y);
 
         std::unique_ptr<FONSparams>  params;
-    	float       itw_,
-                    ith_;
+    	float          itw_,
+                        ith_;
     	unsigned char* texData;
     	int            dirtyRect[4];
         std::vector<font_ptr> fonts;
@@ -181,9 +181,9 @@ namespace fontstash {
         }
         void freeFont(FONSfont *font)
         {
-            if (font == nullptr) return;
-            if (font->glyphs) free(font->glyphs);
-            if (font->freeData && font->data) free(font->data);
+            if(font == nullptr) return;
+            if(font->glyphs) free(font->glyphs);
+            if(font->freeData && font->data) free(font->data);
             free(font);
         }
 
@@ -191,14 +191,14 @@ namespace fontstash {
         {
             FONSfont *font = nullptr;
             font = reinterpret_cast<FONSfont*>(std::calloc(1, sizeof(FONSfont)));
-            if (font == nullptr)
+            if(font == nullptr)
             {
                 freeFont(font);
                 return INVALID;
             }
 
             font->glyphs = reinterpret_cast<FONSglyph*>(std::calloc(FONS_INIT_GLYPHS, sizeof(FONSglyph)));
-            if (font->glyphs == nullptr)
+            if(font->glyphs == nullptr)
             {
                 freeFont(font);
                 return INVALID;
@@ -232,9 +232,9 @@ namespace fontstash {
     	// 16-byte align the returned pointer
     	size = (size + 0xf) & ~0xf;
 
-    	if (stash->nscratch+(int)size > FONS_SCRATCH_BUF_SIZE)
+    	if(stash->nscratch+(int)size > FONS_SCRATCH_BUF_SIZE)
         {
-    		if (stash->handleError)
+    		if(stash->handleError)
             {
     			stash->handleError(stash->errorUptr, FONS_SCRATCH_FULL, stash->nscratch+(int)size);
     		}
@@ -283,7 +283,7 @@ namespace fontstash {
     int FONScontext::addFallbackFont(int base, int fallback)
     {
     	FONSfont *baseFont = fonts[base].get();
-    	if (baseFont->nfallbacks < FONS_MAX_FALLBACKS) {
+    	if(baseFont->nfallbacks < FONS_MAX_FALLBACKS) {
     		baseFont->fallbacks[baseFont->nfallbacks++] = fallback;
     		return 1;
     	}
@@ -322,15 +322,15 @@ namespace fontstash {
 
     void FONScontext::pushState()
     {
-    	if (nstates >= FONS_MAX_STATES)
+    	if(nstates >= FONS_MAX_STATES)
         {
-    		if (handleError)
+    		if(handleError)
             {
     			handleError(errorUptr, FONS_STATES_OVERFLOW, 0);
     		}
             return;
     	}
-    	if (nstates > 0)
+    	if(nstates > 0)
         {
             std::cout << "memcpy state" << std::endl;
     		memcpy(&states[nstates], &states[nstates-1], sizeof(FONSstate));
@@ -340,9 +340,9 @@ namespace fontstash {
 
     void FONScontext::popState()
     {
-    	if (nstates <= 1)
+    	if(nstates <= 1)
         {
-    		if (handleError)
+    		if(handleError)
             {
     			handleError(errorUptr, FONS_STATES_UNDERFLOW, 0);
     		}
@@ -372,16 +372,16 @@ namespace fontstash {
     	wchar_t wmode[MAX_PATH];
     	FILE* f;
 
-    	if (fileLen == 0)
+    	if(fileLen == 0)
     		return nullptr;
-    	if (modeLen == 0)
+    	if(modeLen == 0)
     		return nullptr;
     	len = MultiByteToWideChar(CP_UTF8, 0, filename, fileLen, wpath, fileLen);
-    	if (len >= MAX_PATH)
+    	if(len >= MAX_PATH)
     		return nullptr;
     	wpath[len] = L'\0';
     	len = MultiByteToWideChar(CP_UTF8, 0, mode, modeLen, wmode, modeLen);
-    	if (len >= MAX_PATH)
+    	if(len >= MAX_PATH)
     		return nullptr;
     	wmode[len] = L'\0';
     	f = _wfopen(wpath, wmode);
@@ -399,22 +399,22 @@ namespace fontstash {
 
     	// Read in the font data.
     	fp = fons__fopen(path, "rb");
-    	if (fp == nullptr) goto error;
+    	if(fp == nullptr) goto error;
     	fseek(fp,0,SEEK_END);
     	dataSize = (int)ftell(fp);
     	fseek(fp,0,SEEK_SET);
     	data = (unsigned char*)std::calloc(dataSize, sizeof(unsigned char));
-    	if (data == nullptr) goto error;
+    	if(data == nullptr) goto error;
     	readed = fread(data, 1, dataSize, fp);
     	fclose(fp);
     	fp = 0;
-    	if (readed != dataSize) goto error;
+    	if(readed != dataSize) goto error;
 
     	return addFontMem(name, data, dataSize, 1);
 
     error:
-    	if (data) free(data);
-    	if (fp) fclose(fp);
+    	if(data) free(data);
+    	if(fp) fclose(fp);
     	return INVALID;
     }
 
@@ -423,7 +423,7 @@ namespace fontstash {
     	int i, ascent, descent, fh, lineGap;
     	
     	int idx = allocFont();
-    	if (idx == INVALID)
+    	if(idx == INVALID)
         {
     		return INVALID;
         }
@@ -446,7 +446,7 @@ namespace fontstash {
 
     	// Init font
     	nscratch = 0;
-    	if (!font->loadFont(this, data, dataSize))
+    	if(!font->loadFont(this, data, dataSize))
         {
             freeFont(font);
             fonts.pop_back();
@@ -467,7 +467,7 @@ namespace fontstash {
     {
     	for(size_t index = 0; index < fonts.size(); ++index)
         {
-    		if (strcmp(fonts[index]->name, name) == 0)
+    		if(strcmp(fonts[index]->name, name) == 0)
             {
     			return index;
             }
@@ -490,8 +490,8 @@ namespace fontstash {
     	unsigned char* dst;
     	FONSfont *renderFont = font;
 
-    	if (isize < 2) return nullptr;
-    	if (iblur > 20) iblur = 20;
+    	if(isize < 2) return nullptr;
+    	if(iblur > 20) iblur = 20;
     	pad = iblur+2;
 
     	// Reset allocator.
@@ -501,7 +501,7 @@ namespace fontstash {
     	h = hashint(codepoint) & (FONS_HASH_LUT_SIZE-1);
     	i = font->lut[h];
     	while (i != -1) {
-    		if (font->glyphs[i].codepoint == codepoint && font->glyphs[i].size == isize && font->glyphs[i].blur == iblur)
+    		if(font->glyphs[i].codepoint == codepoint && font->glyphs[i].size == isize && font->glyphs[i].blur == iblur)
             {
     			return &font->glyphs[i];
     		}
@@ -511,13 +511,13 @@ namespace fontstash {
     	// Could not find glyph, create it.
     	g = font->getGlyphIndex(codepoint);
     	// Try to find the glyph in fallback fonts.
-    	if (g == 0)
+    	if(g == 0)
         {
     		for (i = 0; i < font->nfallbacks; ++i)
             {
     			FONSfont *fallbackFont = stash->fonts[font->fallbacks[i]].get();
     			int fallbackIndex = fallbackFont->getGlyphIndex(codepoint);
-    			if (fallbackIndex != 0)
+    			if(fallbackIndex != 0)
                 {
     				g = fallbackIndex;
     				renderFont = fallbackFont;
@@ -534,12 +534,12 @@ namespace fontstash {
 
     	// Find free spot for the rect in the atlas
     	added = stash->atlas->addRect(gw, gh, &gx, &gy);
-    	if (added == 0 && stash->handleError != nullptr) {
+    	if(added == 0 && stash->handleError != nullptr) {
     		// Atlas is full, let the user to resize the atlas (or not), and try again.
     		stash->handleError(stash->errorUptr, FONS_ATLAS_FULL, 0);
     		added = stash->atlas->addRect(gw, gh, &gx, &gy);
     	}
-    	if (added == 0) return nullptr;
+    	if(added == 0) return nullptr;
 
     	// Init glyph.
     	glyph = font->allocGlyph();
@@ -580,13 +580,13 @@ namespace fontstash {
     	for (y = 0; y < gh; y++) {
     		for (x = 0; x < gw; x++) {
     			int a = (int)fdst[x+y*stash->params->width] + 20;
-    			if (a > 255) a = 255;
+    			if(a > 255) a = 255;
     			fdst[x+y*stash->params->width] = a;
     		}
     	}*/
 
     	// Blur
-    	if (iblur > 0)
+    	if(iblur > 0)
         {
     		stash->nscratch = 0;
     		bdst = &stash->texData[glyph->x0 + glyph->y0 * stash->params->width];
@@ -605,7 +605,7 @@ namespace fontstash {
     {
     	float rx,ry,xoff,yoff,x0,y0,x1,y1;
 
-    	if (prevGlyphIndex != -1) {
+    	if(prevGlyphIndex != -1) {
     		float adv = font->getGlyphKernAdvance(prevGlyphIndex, glyph->index) * scale;
     		*x += (int)(adv + spacing + 0.5f);
     	}
@@ -620,7 +620,7 @@ namespace fontstash {
     	x1 = (float)(glyph->x1-1);
     	y1 = (float)(glyph->y1-1);
 
-    	if (params->flags & FONS_ZERO_TOPLEFT) {
+    	if(params->flags & FONS_ZERO_TOPLEFT) {
     		rx = (float)(int)(*x + xoff);
     		ry = (float)(int)(*y + yoff);
 
@@ -654,7 +654,7 @@ namespace fontstash {
     void FONScontext::flush()
     {
     	// Flush texture
-    	if (dirtyRect[0] < dirtyRect[2] && dirtyRect[1] < dirtyRect[3]) {
+    	if(dirtyRect[0] < dirtyRect[2] && dirtyRect[1] < dirtyRect[3]) {
             params->renderUpdate(dirtyRect, texData);
     		// Reset dirty rect
     		dirtyRect[0] = params->width;
@@ -664,7 +664,7 @@ namespace fontstash {
     	}
 
     	// Flush triangles
-    	if (nverts > 0)
+    	if(nverts > 0)
         {
             params->renderDraw(verts, tcoords, colors, nverts);
     		nverts = 0;
@@ -672,24 +672,24 @@ namespace fontstash {
     }
     static float fons__getVertAlign(FONScontext* stash, FONSfont *font, int align, short isize)
     {
-    	if (stash->params->flags & FONS_ZERO_TOPLEFT) {
-    		if (align & FONS_ALIGN_TOP) {
+    	if(stash->params->flags & FONS_ZERO_TOPLEFT) {
+    		if(align & FONS_ALIGN_TOP) {
     			return font->ascender * (float)isize/10.0f;
-    		} else if (align & FONS_ALIGN_MIDDLE) {
+    		} else if(align & FONS_ALIGN_MIDDLE) {
     			return (font->ascender + font->descender) / 2.0f * (float)isize/10.0f;
-    		} else if (align & FONS_ALIGN_BASELINE) {
+    		} else if(align & FONS_ALIGN_BASELINE) {
     			return 0.0f;
-    		} else if (align & FONS_ALIGN_BOTTOM) {
+    		} else if(align & FONS_ALIGN_BOTTOM) {
     			return font->descender * (float)isize/10.0f;
     		}
     	} else {
-    		if (align & FONS_ALIGN_TOP) {
+    		if(align & FONS_ALIGN_TOP) {
     			return -font->ascender * (float)isize/10.0f;
-    		} else if (align & FONS_ALIGN_MIDDLE) {
+    		} else if(align & FONS_ALIGN_MIDDLE) {
     			return -(font->ascender + font->descender) / 2.0f * (float)isize/10.0f;
-    		} else if (align & FONS_ALIGN_BASELINE) {
+    		} else if(align & FONS_ALIGN_BASELINE) {
     			return 0.0f;
-    		} else if (align & FONS_ALIGN_BOTTOM) {
+    		} else if(align & FONS_ALIGN_BOTTOM) {
     			return -font->descender * (float)isize/10.0f;
     		}
     	}
@@ -709,22 +709,22 @@ namespace fontstash {
     	float scale;
     	float width;
 
-    	if (state->font < 0 || state->font >= fonts.size() - 1) return x;
+    	if(state->font == FONSstate::npos || state->font >= fonts.size() - 1) return x;
     	FONSfont *font = fonts[state->font].get();
-    	if (font->data == nullptr) return x;
+    	if(font->data == nullptr) return x;
 
     	scale = font->getPixelHeightScale(static_cast<float>(isize)/10.0f);
 
-    	if (end == nullptr)
+    	if(end == nullptr)
     		end = str + strlen(str);
 
     	// Align horizontally
-    	if (state->align & FONS_ALIGN_LEFT) {
+    	if(state->align & FONS_ALIGN_LEFT) {
     		// empty
-    	} else if (state->align & FONS_ALIGN_RIGHT) {
+    	} else if(state->align & FONS_ALIGN_RIGHT) {
     		width = textBounds(x,y, str, end, nullptr);
     		x -= width;
-    	} else if (state->align & FONS_ALIGN_CENTER) {
+    	} else if(state->align & FONS_ALIGN_CENTER) {
     		width = textBounds(x,y, str, end, nullptr);
     		x -= width * 0.5f;
     	}
@@ -733,13 +733,13 @@ namespace fontstash {
 
     	for (; str != end; ++str)
         {
-    		if (fontstash::decutf8(&utf8state, &codepoint, *(const unsigned char*)str))
+    		if(fontstash::decutf8(&utf8state, &codepoint, *(const unsigned char*)str))
     			continue;
     		glyph = fons__getGlyph(this, font, codepoint, isize, iblur);
-    		if (glyph != nullptr) {
+    		if(glyph != nullptr) {
     			getQuad(font, prevGlyphIndex, glyph, scale, state->spacing, &x, &y, &q);
 
-    			if (nverts+6 > FONS_VERTEX_COUNT)
+    			if(nverts+6 > FONS_VERTEX_COUNT)
     				flush();
 
     			vertex(q.x0, q.y0, q.s0, q.t0, state->color);
@@ -764,31 +764,31 @@ namespace fontstash {
 
     	memset(iter, 0, sizeof(*iter));
 
-    	if (state->font < 0 || state->font >= fonts.size() - 1)
+    	if(state->font == FONSstate::npos || state->font >= fonts.size() - 1)
         {
             return 0;
         }
     	iter->font = fonts[state->font].get();
-    	if (iter->font->data == nullptr) return 0;
+    	if(iter->font->data == nullptr) return 0;
 
     	iter->isize = (short)(state->size*10.0f);
     	iter->iblur = (short)state->blur;
     	iter->scale = iter->font->getPixelHeightScale((float)iter->isize/10.0f);
 
     	// Align horizontally
-    	if (state->align & FONS_ALIGN_LEFT) {
+    	if(state->align & FONS_ALIGN_LEFT) {
     		// empty
-    	} else if (state->align & FONS_ALIGN_RIGHT) {
+    	} else if(state->align & FONS_ALIGN_RIGHT) {
     		width = textBounds(x,y, str, end, nullptr);
     		x -= width;
-    	} else if (state->align & FONS_ALIGN_CENTER) {
+    	} else if(state->align & FONS_ALIGN_CENTER) {
     		width = textBounds(x,y, str, end, nullptr);
     		x -= width * 0.5f;
     	}
     	// Align vertically.
     	y += fons__getVertAlign(this, iter->font, state->align, iter->isize);
 
-    	if (end == nullptr)
+    	if(end == nullptr)
     		end = str + strlen(str);
 
     	iter->x = iter->nextx = x;
@@ -809,21 +809,21 @@ namespace fontstash {
     	const char* str = iter->next;
     	iter->str = iter->next;
 
-    	if (str == iter->end)
+    	if(str == iter->end)
         {
     		return 0;
         }
 
     	for (; str != iter->end; str++)
         {
-    		if (fontstash::decutf8(&iter->utf8state, &iter->codepoint, *(const unsigned char*)str))
+    		if(fontstash::decutf8(&iter->utf8state, &iter->codepoint, *(const unsigned char*)str))
     			continue;
     		str++;
     		// Get glyph and quad
     		iter->x = iter->nextx;
     		iter->y = iter->nexty;
     		glyph = fons__getGlyph(this, iter->font, iter->codepoint, iter->isize, iter->iblur);
-    		if (glyph != nullptr)
+    		if(glyph != nullptr)
             {
     			getQuad(iter->font, iter->prevGlyphIndex, glyph, iter->scale, iter->spacing, &iter->nextx, &iter->nexty, quad);
             }
@@ -843,7 +843,7 @@ namespace fontstash {
     	float u = w == 0 ? 0 : (1.0f / w);
     	float v = h == 0 ? 0 : (1.0f / h);
 
-    	if (nverts+6+6 > FONS_VERTEX_COUNT)
+    	if(nverts+6+6 > FONS_VERTEX_COUNT)
     		flush();
 
     	// Draw background
@@ -899,9 +899,9 @@ namespace fontstash {
     	float scale;
     	float startx, advance;
 
-    	if (state->font < 0 || state->font >= fonts.size() - 1) return 0;
+    	if(state->font == FONSstate::npos || state->font >= fonts.size() - 1) return 0;
     	FONSfont *font = fonts[state->font].get();
-    	if (font->data == nullptr) return 0;
+    	if(font->data == nullptr) return 0;
 
     	scale = font->getPixelHeightScale(static_cast<float>(isize)/10.0f);
 
@@ -913,31 +913,31 @@ namespace fontstash {
     	miny = maxy = y;
     	startx = x;
 
-    	if (end == nullptr)
+    	if(end == nullptr)
         {
     		end = str + strlen(str);
         }
 
     	for (; str != end; ++str)
         {
-    		if (fontstash::decutf8(&utf8state, &codepoint, *(const unsigned char*)str))
+    		if(fontstash::decutf8(&utf8state, &codepoint, *(const unsigned char*)str))
             {
     			continue;
             }
     		glyph = fons__getGlyph(this, font, codepoint, isize, iblur);
-    		if (glyph != nullptr) {
+    		if(glyph != nullptr) {
     			getQuad(font, prevGlyphIndex, glyph, scale, state->spacing, &x, &y, &q);
-    			if (q.x0 < minx) minx = q.x0;
-    			if (q.x1 > maxx) maxx = q.x1;
-    			if (params->flags & FONS_ZERO_TOPLEFT)
+    			if(q.x0 < minx) minx = q.x0;
+    			if(q.x1 > maxx) maxx = q.x1;
+    			if(params->flags & FONS_ZERO_TOPLEFT)
                 {
-    				if (q.y0 < miny) miny = q.y0;
-    				if (q.y1 > maxy) maxy = q.y1;
+    				if(q.y0 < miny) miny = q.y0;
+    				if(q.y1 > maxy) maxy = q.y1;
     			}
                 else
                 {
-    				if (q.y1 < miny) miny = q.y1;
-    				if (q.y0 > maxy) maxy = q.y0;
+    				if(q.y1 < miny) miny = q.y1;
+    				if(q.y0 > maxy) maxy = q.y0;
     			}
     		}
     		prevGlyphIndex = glyph != nullptr ? glyph->index : -1;
@@ -946,17 +946,17 @@ namespace fontstash {
     	advance = x - startx;
 
     	// Align horizontally
-    	if (state->align & FONS_ALIGN_LEFT) {
+    	if(state->align & FONS_ALIGN_LEFT) {
     		// empty
-    	} else if (state->align & FONS_ALIGN_RIGHT) {
+    	} else if(state->align & FONS_ALIGN_RIGHT) {
     		minx -= advance;
     		maxx -= advance;
-    	} else if (state->align & FONS_ALIGN_CENTER) {
+    	} else if(state->align & FONS_ALIGN_CENTER) {
     		minx -= advance * 0.5f;
     		maxx -= advance * 0.5f;
     	}
 
-    	if (bounds)
+    	if(bounds)
         {
     		bounds[0] = minx;
     		bounds[1] = miny;
@@ -972,26 +972,26 @@ namespace fontstash {
     	FONSstate* state = getState();
     	short isize;
 
-    	if (state->font < 0 || state->font >= fonts.size() - 1)
+    	if(state->font == FONSstate::npos || state->font >= fonts.size() - 1)
         {
             return;
         }
     	FONSfont *font = fonts[state->font].get();
     	isize = (short)(state->size*10.0f);
-    	if (font->data == nullptr)
+    	if(font->data == nullptr)
         {
             return;
         }
 
-    	if (ascender)
+    	if(ascender)
         {
     		*ascender = font->ascender*isize/10.0f;
         }
-    	if (descender)
+    	if(descender)
         {
     		*descender = font->descender*isize/10.0f;
         }
-    	if (lineh)
+    	if(lineh)
         {
     		*lineh = font->lineh*isize/10.0f;
         }
@@ -1002,34 +1002,47 @@ namespace fontstash {
     	FONSstate* state = getState();
     	short isize;
 
-    	if (state->font < 0 || state->font >= fonts.size() - 1) return;
+    	if(state->font == FONSstate::npos || state->font >= fonts.size() - 1)
+        {
+            return;
+        }
     	FONSfont *font = fonts[state->font].get();
-    	isize = (short)(state->size*10.0f);
-    	if (font->data == nullptr) return;
+    	isize = static_cast<short>(state->size*10.0f);
+    	if(font->data == nullptr)
+        {
+            return;
+        }
 
     	y += fons__getVertAlign(this, font, state->align, isize);
 
-    	if (params->flags & FONS_ZERO_TOPLEFT) {
-    		*miny = y - font->ascender * (float)isize/10.0f;
-    		*maxy = *miny + font->lineh*isize/10.0f;
-    	} else {
-    		*maxy = y + font->descender * (float)isize/10.0f;
-    		*miny = *maxy - font->lineh*isize/10.0f;
+    	if(params->flags & FONS_ZERO_TOPLEFT)
+        {
+    		*miny = y - font->ascender * static_cast<float>(isize) / 10.0f;
+    		*maxy = *miny + font->lineh * isize / 10.0f;
+    	}
+        else
+        {
+    		*maxy = y + font->descender * static_cast<float>(isize) / 10.0f;
+    		*miny = *maxy - font->lineh * isize / 10.0f;
     	}
     }
 
     const unsigned char* FONScontext::fonsGetTextureData(int* width, int* height)
     {
-    	if (width != nullptr)
+    	if(width != nullptr)
+        {
     		*width = params->width;
-    	if (height != nullptr)
-    		*height = params->height;
+        }
+    	if(height != nullptr)
+    	{
+        	*height = params->height;
+        }
     	return texData;
     }
 
     int FONScontext::fonsValidateTexture(int* dirty)
     {
-    	if (dirtyRect[0] < dirtyRect[2] && dirtyRect[1] < dirtyRect[3])
+    	if(dirtyRect[0] < dirtyRect[2] && dirtyRect[1] < dirtyRect[3])
         {
     		dirty[0] = dirtyRect[0];
     		dirty[1] = dirtyRect[1];
@@ -1059,38 +1072,44 @@ namespace fontstash {
 
     int FONScontext::fonsExpandAtlas(int width, int height)
     {
-    	int i, maxy = 0;
-    	unsigned char* data = nullptr;
+    	int maxy = 0;
 
     	width = maxi(width, params->width);
     	height = maxi(height, params->height);
 
-    	if (width == params->width && height == params->height)
+    	if(width == params->width && height == params->height)
+        {
     		return 1;
+        }
 
     	// Flush pending glyphs.
     	flush();
 
     	// Create new texture
-        if (params->renderResize(width, height) == 0)
+        if(params->renderResize(width, height) == 0)
         {
     			return 0;
     	}
     	// Copy old texture data over.
-    	data = reinterpret_cast<unsigned char*>(std::calloc(width * height, sizeof(unsigned char)));
-    	if (data == nullptr)
+    	unsigned char *data = reinterpret_cast<unsigned char*>(std::calloc(width * height, sizeof(unsigned char)));
+    	if(data == nullptr)
         {
     		return 0;
         }
-    	for (i = 0; i < params->height; i++) {
-    		unsigned char* dst = &data[i*width];
-    		unsigned char* src = &texData[i*params->width];
+    	for(int i = 0; i < params->height; ++i)
+        {
+    		unsigned char *dst = &data[i*width];
+    		unsigned char *src = &texData[i*params->width];
     		memcpy(dst, src, params->width);
-    		if (width > params->width)
+    		if(width > params->width)
+            {
     			memset(dst+params->width, 0, width - params->width);
+            }
     	}
-    	if (height > params->height)
+    	if(height > params->height)
+        {
     		memset(&data[params->height * width], 0, (height - params->height) * width);
+        }
 
     	free(texData);
     	texData = data;
@@ -1099,8 +1118,10 @@ namespace fontstash {
     	atlas->expand(width, height);
 
     	// Add existing data as dirty.
-    	for (i = 0; i < atlas->nnodes(); i++)
+    	for (int i = 0; i < atlas->nnodes(); ++i)
+        {
     		maxy = maxi(maxy, atlas->nodes_[i].y);
+        }
     	dirtyRect[0] = 0;
     	dirtyRect[1] = 0;
     	dirtyRect[2] = params->width;
@@ -1108,20 +1129,19 @@ namespace fontstash {
 
     	params->width = width;
     	params->height = height;
-    	itw_ = 1.0f/params->width;
-    	ith_ = 1.0f/params->height;
+    	itw_ = 1.0f / params->width;
+    	ith_ = 1.0f / params->height;
 
     	return 1;
     }
 
     inline int FONScontext::fonsResetAtlas(int width, int height)
     {
-    	int i, j;
     	// Flush pending glyphs.
     	flush();
 
     	// Create new texture
-        if (params->renderResize(width, height) == 0)
+        if(params->renderResize(width, height) == 0)
         {
     			return 0;
     	}
@@ -1131,7 +1151,10 @@ namespace fontstash {
 
     	// Clear texture data.
     	texData = (unsigned char*)realloc(texData, width * height);
-    	if (texData == nullptr) return 0;
+    	if(texData == nullptr)
+        {
+            return 0;
+        }
     	memset(texData, 0, width * height);
 
     	// Reset dirty rect
@@ -1144,7 +1167,7 @@ namespace fontstash {
     	for(const auto &font : fonts)
         {
     		font->nglyphs = 0;
-    		for (j = 0; j < FONS_HASH_LUT_SIZE; j++)
+    		for (int j = 0; j < FONS_HASH_LUT_SIZE; j++)
     	   	{
                 font->lut[j] = -1;
             }
