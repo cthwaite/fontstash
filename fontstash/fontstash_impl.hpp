@@ -51,15 +51,15 @@ namespace fontstash {
     struct FONScontext {
         FONScontext(FONSparams *p) :
             params{nullptr},
-            handleError{nullptr},
-            errorUptr{nullptr},
+            nverts{0},
             nstates{0},
-            nverts{0}
+            handleError{nullptr},
+            errorUptr{nullptr}
         {
             params.reset(p);
             // Allocate scratch buffer.
             scratch = (unsigned char*)std::calloc(FONS_SCRATCH_BUF_SIZE, sizeof(unsigned char));
-            if (scratch == nullptr)
+            if(scratch == nullptr)
             {
                 throw std::bad_alloc();
             }
@@ -70,7 +70,7 @@ namespace fontstash {
                 throw std::runtime_error("Failed to initialise Freetype");
             }
 
-            if (params->renderCreate(params->width, params->height) == 0)
+            if(params->renderCreate(params->width, params->height) == 0)
             {
                throw std::runtime_error("Failed to initialise rendering backend");
             }
@@ -84,7 +84,7 @@ namespace fontstash {
             itw_ = 1.0f/params->width;
             ith_ = 1.0f/params->height;
             texData = (unsigned char*)std::calloc(params->width * params->height, sizeof(unsigned char));
-            if (texData == nullptr)
+            if(texData == nullptr)
             {
                 throw std::bad_alloc();
             }
