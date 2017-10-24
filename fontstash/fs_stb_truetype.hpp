@@ -59,9 +59,9 @@ namespace fontstash {
         stbtt_fontinfo font_;
     };
 
-    static int fons__tt_init(FONScontext *context)
+    static bool fons__tt_init(FONScontext *context)
     {
         (void)(context);
-        return 1;
+        return true;
     }
 }

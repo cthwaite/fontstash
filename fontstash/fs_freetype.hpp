@@ -84,10 +84,10 @@ namespace fontstash {
         FT_Face font_;
     };
 
-    static int fons__tt_init(FONScontext *)
+    static bool fons__tt_init(FONScontext *)
     {
         FT_Error ftError;
         ftError = FT_Init_FreeType(&ftLibrary);
-        return ftError == 0;
+        return ftError == bool;
     }
 }
