@@ -25,80 +25,8 @@
 #include "fontstash/fs_atlas.hpp"
 #include "fontstash/fs_blur.hpp"
 
-#ifdef FONS_USE_FREETYPE
-#include "fontstash/fs_freetype.hpp"
-#else
-#include "fontstash/fs_stb_truetype.hpp"
-#endif
-
-#ifndef FONS_SCRATCH_BUF_SIZE
-#	define FONS_SCRATCH_BUF_SIZE 64000
-#endif
-#ifndef FONS_HASH_LUT_SIZE
-#	define FONS_HASH_LUT_SIZE 256
-#endif
-#ifndef FONS_INIT_FONTS
-#	define FONS_INIT_FONTS 4
-#endif
-#ifndef FONS_INIT_GLYPHS
-#	define FONS_INIT_GLYPHS 256
-#endif
-#ifndef FONS_INIT_ATLAS_NODES
-#	define FONS_INIT_ATLAS_NODES 256
-#endif
-#ifndef FONS_VERTEX_COUNT
-#	define FONS_VERTEX_COUNT 1024
-#endif
-#ifndef FONS_MAX_STATES
-#	define FONS_MAX_STATES 20
-#endif
-#ifndef FONS_MAX_FALLBACKS
-#	define FONS_MAX_FALLBACKS 20
-#endif
 namespace fontstash {
-
-    struct FONSglyph {
-    	unsigned int codepoint;
-    	int index;
-    	int next;
-    	short size, blur;
-    	short x0,y0,x1,y1;
-    	short xadv,xoff,yoff;
-    };
-
-    struct FONSfont
-    {
-    	FONSttFontImpl font;
-    	char name[64];
-    	unsigned char* data;
-    	int dataSize;
-    	unsigned char freeData;
-    	float ascender;
-    	float descender;
-    	float lineh;
-    	FONSglyph* glyphs;
-    	int cglyphs;
-    	int nglyphs;
-    	int lut[FONS_HASH_LUT_SIZE];
-    	int fallbacks[FONS_MAX_FALLBACKS];
-    	int nfallbacks;
-        FONSglyph* allocGlyph()
-        {
-            if (nglyphs+1 > cglyphs)
-            {
-                cglyphs = cglyphs == 0 ? 8 : cglyphs * 2;
-                glyphs = (FONSglyph*)realloc(glyphs, sizeof(FONSglyph) * cglyphs);
-                if (glyphs == nullptr)
-                {
-                    return nullptr;
-                }
-            }
-            nglyphs++;
-            return &glyphs[nglyphs-1];
-        }
-    };
-
-    using font_ptr = FONSfont*;//std::unique_ptr<FONSfont>;
+    using font_ptr = std::unique_ptr<FONSfont>;
 
     struct FONSstate {
     	int font;
@@ -127,9 +55,9 @@ namespace fontstash {
             }
 
             // Initialize implementation library
-            if(!fons__tt_init(this))
+            if(!initFreetype())
             {
-                throw std::runtime_error("Failed to initialise font library");
+                throw std::runtime_error("Failed to initialise Freetype");
             }
 
             if (params->renderCreate(params->width, params->height) == 0)
@@ -157,7 +85,7 @@ namespace fontstash {
             dirtyRect[3] = 0;
 
             // Add white rect at 0,0 for debug drawing.
-            addWhiteRect(2,2);
+            addWhiteRect(2, 2);
 
             pushState();
             clearState();
@@ -165,11 +93,6 @@ namespace fontstash {
 
         ~FONScontext()
         {
-            for (const auto &font : fonts)
-            {
-                freeFont(font);
-            }
-
             if (texData)
             {
                 free(texData);
@@ -246,7 +169,7 @@ namespace fontstash {
     	void            (*handleError)(void* uptr, int error, int val);
     	void            *errorUptr;
 
-        void        getQuad(FONSfont* font, int prevGlyphIndex, FONSglyph* glyph, float scale, float spacing, float* x, float* y, FONSquad* q);
+        void        getQuad(FONSfont *font, int prevGlyphIndex, FONSglyph* glyph, float scale, float spacing, float* x, float* y, FONSquad* q);
 
         void        addWhiteRect(int w, int h);
         int         addFallbackFont(int base, int fallback);
@@ -255,7 +178,7 @@ namespace fontstash {
         {
             return &states[nstates-1];
         }
-        void freeFont(FONSfont* font)
+        void freeFont(FONSfont *font)
         {
             if (font == nullptr) return;
             if (font->glyphs) free(font->glyphs);
@@ -265,7 +188,7 @@ namespace fontstash {
 
         int allocFont()
         {
-            FONSfont* font = nullptr;
+            FONSfont *font = nullptr;
             font = reinterpret_cast<FONSfont*>(std::calloc(1, sizeof(FONSfont)));
             if (font == nullptr)
             {
@@ -358,7 +281,7 @@ namespace fontstash {
 
     int FONScontext::addFallbackFont(int base, int fallback)
     {
-    	FONSfont* baseFont = fonts[base];
+    	FONSfont *baseFont = fonts[base].get();
     	if (baseFont->nfallbacks < FONS_MAX_FALLBACKS) {
     		baseFont->fallbacks[baseFont->nfallbacks++] = fallback;
     		return 1;
@@ -497,15 +420,14 @@ namespace fontstash {
     int FONScontext::addFontMem(const char* name, unsigned char* data, int dataSize, int freeData)
     {
     	int i, ascent, descent, fh, lineGap;
-    	FONSfont* font;
-
+    	
     	int idx = allocFont();
     	if (idx == INVALID)
         {
     		return INVALID;
         }
 
-    	font = fonts[idx];
+    	FONSfont *font = fonts[idx].get();
 
     	strncpy(font->name, name, sizeof(font->name));
     	font->name[sizeof(font->name)-1] = '\0';
@@ -523,7 +445,7 @@ namespace fontstash {
 
     	// Init font
     	nscratch = 0;
-    	if (!font->font.loadFont(this, data, dataSize))
+    	if (!font->loadFont(this, data, dataSize))
         {
             freeFont(font);
             fonts.pop_back();
@@ -531,7 +453,7 @@ namespace fontstash {
         }
     	// Store normalized line height. The real line height is got
     	// by multiplying the lineh by font size.
-    	font->font.getFontVMetrics(&ascent, &descent, &lineGap);
+    	font->getFontVMetrics(&ascent, &descent, &lineGap);
     	fh = ascent - descent;
     	font->ascender = (float)ascent / (float)fh;
     	font->descender = (float)descent / (float)fh;
@@ -554,7 +476,7 @@ namespace fontstash {
 
 
 
-    static FONSglyph* fons__getGlyph(FONScontext* stash, FONSfont* font, unsigned int codepoint,
+    static FONSglyph* fons__getGlyph(FONScontext* stash, FONSfont *font, unsigned int codepoint,
     								 short isize, short iblur)
     {
     	int i, g, advance, lsb, x0, y0, x1, y1, gw, gh, gx, gy, x, y;
@@ -565,7 +487,7 @@ namespace fontstash {
     	int pad, added;
     	unsigned char* bdst;
     	unsigned char* dst;
-    	FONSfont* renderFont = font;
+    	FONSfont *renderFont = font;
 
     	if (isize < 2) return nullptr;
     	if (iblur > 20) iblur = 20;
@@ -586,14 +508,14 @@ namespace fontstash {
     	}
 
     	// Could not find glyph, create it.
-    	g = font->font.getGlyphIndex(codepoint);
+    	g = font->getGlyphIndex(codepoint);
     	// Try to find the glyph in fallback fonts.
     	if (g == 0)
         {
     		for (i = 0; i < font->nfallbacks; ++i)
             {
-    			FONSfont* fallbackFont = stash->fonts[font->fallbacks[i]];
-    			int fallbackIndex = fallbackFont->font.getGlyphIndex(codepoint);
+    			FONSfont *fallbackFont = stash->fonts[font->fallbacks[i]].get();
+    			int fallbackIndex = fallbackFont->getGlyphIndex(codepoint);
     			if (fallbackIndex != 0)
                 {
     				g = fallbackIndex;
@@ -604,8 +526,8 @@ namespace fontstash {
     		// It is possible that we did not find a fallback glyph.
     		// In that case the glyph index 'g' is 0, and we'll proceed below and cache empty glyph.
     	}
-    	scale = renderFont->font.getPixelHeightScale(size);
-    	renderFont->font.buildGlyphBitmap(g, size, scale, &advance, &lsb, &x0, &y0, &x1, &y1);
+    	scale = renderFont->getPixelHeightScale(size);
+    	renderFont->buildGlyphBitmap(g, size, scale, &advance, &lsb, &x0, &y0, &x1, &y1);
     	gw = x1-x0 + pad*2;
     	gh = y1-y0 + pad*2;
 
@@ -639,7 +561,7 @@ namespace fontstash {
 
     	// Rasterize
     	dst = &stash->texData[(glyph->x0+pad) + (glyph->y0+pad) * stash->params->width];
-    	renderFont->font.renderGlyphBitmap(dst, gw-pad*2,gh-pad*2, stash->params->width, scale,scale, g);
+    	renderFont->renderGlyphBitmap(dst, gw-pad*2,gh-pad*2, stash->params->width, scale,scale, g);
 
     	// Make sure there is one pixel empty border.
     	dst = &stash->texData[glyph->x0 + glyph->y0 * stash->params->width];
@@ -678,12 +600,12 @@ namespace fontstash {
     	return glyph;
     }
 
-    void FONScontext::getQuad(FONSfont* font, int prevGlyphIndex, FONSglyph* glyph, float scale, float spacing, float* x, float* y, FONSquad* q)
+    void FONScontext::getQuad(FONSfont *font, int prevGlyphIndex, FONSglyph* glyph, float scale, float spacing, float* x, float* y, FONSquad* q)
     {
     	float rx,ry,xoff,yoff,x0,y0,x1,y1;
 
     	if (prevGlyphIndex != -1) {
-    		float adv = font->font.getGlyphKernAdvance(prevGlyphIndex, glyph->index) * scale;
+    		float adv = font->getGlyphKernAdvance(prevGlyphIndex, glyph->index) * scale;
     		*x += (int)(adv + spacing + 0.5f);
     	}
 
@@ -747,7 +669,7 @@ namespace fontstash {
     		nverts = 0;
     	}
     }
-    static float fons__getVertAlign(FONScontext* stash, FONSfont* font, int align, short isize)
+    static float fons__getVertAlign(FONScontext* stash, FONSfont *font, int align, short isize)
     {
     	if (stash->params->flags & FONS_ZERO_TOPLEFT) {
     		if (align & FONS_ALIGN_TOP) {
@@ -782,16 +704,15 @@ namespace fontstash {
     	FONSquad q;
     	int prevGlyphIndex = -1;
     	short isize = (short)(state->size*10.0f);
-    	short iblur = (short)state->blur;
+    	short iblur = static_cast<short>(state->blur);
     	float scale;
-    	FONSfont* font;
     	float width;
 
     	if (state->font < 0 || state->font >= fonts.size() - 1) return x;
-    	font = fonts[state->font];
+    	FONSfont *font = fonts[state->font].get();
     	if (font->data == nullptr) return x;
 
-    	scale = font->font.getPixelHeightScale(static_cast<float>(isize)/10.0f);
+    	scale = font->getPixelHeightScale(static_cast<float>(isize)/10.0f);
 
     	if (end == nullptr)
     		end = str + strlen(str);
@@ -846,12 +767,12 @@ namespace fontstash {
         {
             return 0;
         }
-    	iter->font = fonts[state->font];
+    	iter->font = fonts[state->font].get();
     	if (iter->font->data == nullptr) return 0;
 
     	iter->isize = (short)(state->size*10.0f);
     	iter->iblur = (short)state->blur;
-    	iter->scale = iter->font->font.getPixelHeightScale((float)iter->isize/10.0f);
+    	iter->scale = iter->font->getPixelHeightScale((float)iter->isize/10.0f);
 
     	// Align horizontally
     	if (state->align & FONS_ALIGN_LEFT) {
@@ -975,14 +896,13 @@ namespace fontstash {
     	short isize = (short)(state->size*10.0f);
     	short iblur = (short)state->blur;
     	float scale;
-    	FONSfont* font;
     	float startx, advance;
 
     	if (state->font < 0 || state->font >= fonts.size() - 1) return 0;
-    	font = fonts[state->font];
+    	FONSfont *font = fonts[state->font].get();
     	if (font->data == nullptr) return 0;
 
-    	scale = font->font.getPixelHeightScale(static_cast<float>(isize)/10.0f);
+    	scale = font->getPixelHeightScale(static_cast<float>(isize)/10.0f);
 
     	// Align vertically.
     	y += fons__getVertAlign(this, font, state->align, isize);
@@ -1055,7 +975,7 @@ namespace fontstash {
         {
             return;
         }
-    	FONSfont *font = fonts[state->font];
+    	FONSfont *font = fonts[state->font].get();
     	isize = (short)(state->size*10.0f);
     	if (font->data == nullptr)
         {
@@ -1078,12 +998,11 @@ namespace fontstash {
 
     void FONScontext::fonsLineBounds(float y, float* miny, float* maxy)
     {
-    	FONSfont* font;
     	FONSstate* state = getState();
     	short isize;
 
     	if (state->font < 0 || state->font >= fonts.size() - 1) return;
-    	font = fonts[state->font];
+    	FONSfont *font = fonts[state->font].get();
     	isize = (short)(state->size*10.0f);
     	if (font->data == nullptr) return;
 
