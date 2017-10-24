@@ -58,6 +58,7 @@ namespace fontstash {
         float x1,y1,s1,t1;
     };
 
+    struct FONSfont;
     struct FONStextIter {
         short       isize,
                     iblur;
