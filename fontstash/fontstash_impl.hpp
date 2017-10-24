@@ -230,8 +230,8 @@ namespace fontstash {
         void drawDebug(float x, float y);
 
         std::unique_ptr<FONSparams>  params;
-    	float       itw,
-                    ith;
+    	float       itw_,
+                    ith_;
     	unsigned char* texData;
     	int            dirtyRect[4];
         std::vector<font_ptr> fonts;
@@ -711,10 +711,10 @@ namespace fontstash {
     		q->x1 = rx + x1 - x0;
     		q->y1 = ry + y1 - y0;
 
-    		q->s0 = x0 * itw;
-    		q->t0 = y0 * ith;
-    		q->s1 = x1 * itw;
-    		q->t1 = y1 * ith;
+    		q->s0 = x0 * itw_;
+    		q->t0 = y0 * ith_;
+    		q->s1 = x1 * itw_;
+    		q->t1 = y1 * ith_;
     	} else {
     		rx = (float)(int)(*x + xoff);
     		ry = (float)(int)(*y - yoff);
@@ -724,10 +724,10 @@ namespace fontstash {
     		q->x1 = rx + x1 - x0;
     		q->y1 = ry - y1 + y0;
 
-    		q->s0 = x0 * itw;
-    		q->t0 = y0 * ith;
-    		q->s1 = x1 * itw;
-    		q->t1 = y1 * ith;
+    		q->s0 = x0 * itw_;
+    		q->t0 = y0 * ith_;
+    		q->s1 = x1 * itw_;
+    		q->t1 = y1 * ith_;
     	}
 
     	*x += (int)(glyph->xadv / 10.0f + 0.5f);
@@ -1209,8 +1209,8 @@ namespace fontstash {
 
     	params->width = width;
     	params->height = height;
-    	itw = 1.0f/params->width;
-    	ith = 1.0f/params->height;
+    	itw_ = 1.0f/params->width;
+    	ith_ = 1.0f/params->height;
 
     	return 1;
     }
@@ -1251,8 +1251,8 @@ namespace fontstash {
 
     	params->width = width;
     	params->height = height;
-    	itw = 1.0f/params->width;
-    	ith = 1.0f/params->height;
+    	itw_ = 1.0f/params->width;
+    	ith_ = 1.0f/params->height;
 
     	// Add white rect at 0,0 for debug drawing.
     	addWhiteRect(2, 2);
