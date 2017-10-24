@@ -88,6 +88,6 @@ namespace fontstash {
     {
         FT_Error ftError;
         ftError = FT_Init_FreeType(&ftLibrary);
-        return ftError == bool;
+        return ftError == 0;
     }
 }
