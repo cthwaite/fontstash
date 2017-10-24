@@ -29,7 +29,8 @@ namespace fontstash {
     using font_ptr = std::unique_ptr<FONSfont>;
 
     struct FONSstate {
-    	int font;
+        static constexpr size_t npos = ~size_t(0);
+    	size_t font;
     	int align;
     	float size;
     	unsigned int color;
@@ -355,7 +356,7 @@ namespace fontstash {
     	FONSstate* state = getState();
     	state->size = 12.0f;
     	state->color = 0xffffffff;
-    	state->font = 0;
+    	state->font = FONSstate::npos;
     	state->blur = 0;
     	state->spacing = 0;
     	state->align = FONS_ALIGN_LEFT | FONS_ALIGN_BASELINE;
