@@ -127,14 +127,14 @@ namespace fontstash {
             }
 
             // Initialize implementation library
-            if (!fons__tt_init(this))
+            if(!fons__tt_init(this))
             {
-                throw;
+                throw std::runtime_error("Failed to initialise font library");
             }
 
             if (params->renderCreate(params->width, params->height) == 0)
             {
-                throw;
+               throw std::runtime_error("Failed to initialise rendering backend");
             }
 
             atlas.reset(new FONSatlas(params->width, params->height, FONS_INIT_ATLAS_NODES));
